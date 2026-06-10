@@ -1,6 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
+import '../models/weather.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+
+  await Hive.openBox("weather_box");
+
+  final box = Hive.box("weather_box");
+  if (box.isEmpty) {
+    var warszawa = Weather(id: 'war', name: 'Warszawa', lat: 52.2297, lon: 21.0122);
+    var krakow = Weather(id: 'krk', name: 'Kraków', lat: 50.0647, lon: 19.9450);
+
+    await box.put(warszawa.id, warszawa.toMap());
+    await box.put(krakow.id, krakow.toMap());
+  }
+
   runApp(const MyApp());
 }
 
