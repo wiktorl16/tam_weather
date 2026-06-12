@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import '../repositories/weather_repository.dart';
+import 'weather_detail_screen.dart';
 
 class WeatherListScreen extends StatefulWidget {
   const WeatherListScreen({super.key});
@@ -72,6 +73,10 @@ class _WeatherListScreenState extends State<WeatherListScreen> {
                       title: Text(city.name),
                       trailing: Text(city.temp != null ? '${city.temp}°C' : '--°C', style: const TextStyle(fontSize: 18)),
                       onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => WeatherDetailScreen(cityId: city.id)),
+                        );
                       },
                     );
                   },

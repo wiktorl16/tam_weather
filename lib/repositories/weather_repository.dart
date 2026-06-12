@@ -43,4 +43,36 @@ class WeatherRepository {
       throw Exception("Brak połączenia z siecią - wyświetlane są archiwalne dane!");
     }
   }
+
+  Future<void> fetchDetailsForCity(Weather city) async {
+    final url = 'https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&hourly=relative_humidity_2m&current_weather=true';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> cityData = jsonDecode(response.body);
+
+        final currentData = cityData['current_weather'];
+        final hourlyData = cityData['hourly'];
+
+        city.temp = (currentData['temperature'] as num).toDouble();
+        city.windSpeed = (currentData['windspeed'] as num).toDouble();
+
+        if (hourlyData != null && hourlyData['relative_humidity_2m'] is List) {
+          final List<dynamic> humidities = hourlyData['relative_humidity_2m'];
+          if (humidities.isNotEmpty) {
+            city.humidity = (humidities.first as num).toInt();
+          }
+        }
+
+        await _box.put(city.id, city.toMap());
+      } else {
+        throw Exception("Błąd serwera: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Log błędu: $e");
+      throw Exception("Brak połączenia z siecią - wyświetlane są archiwalne dane!");
+    }
+  }
 }
