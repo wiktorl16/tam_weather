@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import '../repositories/weather_repository.dart';
+import '../models/weather.dart';
 import 'weather_detail_screen.dart';
 
 class WeatherListScreen extends StatefulWidget {
@@ -118,27 +119,26 @@ class _WeatherListScreenState extends State<WeatherListScreen> {
 
                     return Dismissible(
                       key: Key(city.id),
-
                       direction: DismissDirection.endToStart,
-
                       background: Container(
-                        color: Colors.red,
+                        margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(4.0),
+                        ),
                         alignment: Alignment.centerRight,
                         padding: const EdgeInsets.only(right: 20.0),
                         child: const Icon(Icons.delete, color: Colors.white),
                       ),
-
                       onDismissed: (direction) async {
                         await _repository.deleteCity(city.id);
-
+                        if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Usunięto miasto: ${city.name}')),
                         );
                       },
-
-                      child: ListTile(
-                        title: Text(city.name),
-                        trailing: Text(city.temp != null ? '${city.temp}°C' : '--°C', style: const TextStyle(fontSize: 18)),
+                      child: WeatherCard(
+                        city: city,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -157,6 +157,48 @@ class _WeatherListScreenState extends State<WeatherListScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddCityDialog,
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+class WeatherCard extends StatelessWidget {
+  final Weather city;
+  final VoidCallback? onTap;
+
+  const WeatherCard({
+    super.key,
+    required this.city,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        onTap: onTap,
+        leading: Icon(
+          Icons.location_pin,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        title: Text(
+          city.name,
+          style: const TextStyle(fontWeight: FontWeight.w500),
+        ),
+        trailing: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          children: [
+            Text(
+              city.temp != null ? '${city.temp}°C' : '--°C',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
       ),
     );
   }

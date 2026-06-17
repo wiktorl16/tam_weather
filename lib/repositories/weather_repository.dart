@@ -39,13 +39,12 @@ class WeatherRepository {
         throw Exception("Błąd serwera: ${response.statusCode}");
       }
     } catch (e) {
-      print("Log błędu: $e");
       throw Exception("Brak połączenia z siecią - wyświetlane są archiwalne dane!");
     }
   }
 
   Future<void> fetchDetailsForCity(Weather city) async {
-    final url = 'https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&hourly=relative_humidity_2m&current_weather=true';
+    final url = 'https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,wind_speed_10m,wind_direction_10m,surface_pressure&hourly=relative_humidity_2m';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -53,11 +52,21 @@ class WeatherRepository {
       if (response.statusCode == 200) {
         final Map<String, dynamic> cityData = jsonDecode(response.body);
 
-        final currentData = cityData['current_weather'];
+        final currentData = cityData['current'];
         final hourlyData = cityData['hourly'];
 
-        city.temp = (currentData['temperature'] as num).toDouble();
-        city.windSpeed = (currentData['windspeed'] as num).toDouble();
+        if (currentData != null) {
+          city.temp = (currentData['temperature_2m'] as num).toDouble();
+          city.windSpeed = (currentData['wind_speed_10m'] as num).toDouble();
+
+          if (currentData['surface_pressure'] != null) {
+            city.pressure = (currentData['surface_pressure'] as num).toDouble();
+          }
+
+          if (currentData['wind_direction_10m'] != null) {
+            city.windDirection = (currentData['wind_direction_10m'] as num).toInt();
+          }
+        }
 
         if (hourlyData != null && hourlyData['relative_humidity_2m'] is List) {
           final List<dynamic> humidities = hourlyData['relative_humidity_2m'];
@@ -71,12 +80,21 @@ class WeatherRepository {
         throw Exception("Błąd serwera: ${response.statusCode}");
       }
     } catch (e) {
-      print("Log błędu: $e");
       throw Exception("Brak połączenia z siecią - wyświetlane są archiwalne dane!");
     }
   }
 
   Future<void> addCity(String cityName) async {
+    final existingCities = getLocalCities();
+
+    final alreadyExists = existingCities.any((city) =>
+    city.name.toLowerCase().trim() == cityName.toLowerCase().trim()
+    );
+
+    if (alreadyExists) {
+      throw Exception("To miasto znajduje się już na Twojej liście!");
+    }
+
     final url = 'https://geocoding-api.open-meteo.com/v1/search?name=${Uri.encodeComponent(cityName)}&count=1&language=pl';
 
     try {
@@ -105,7 +123,6 @@ class WeatherRepository {
         throw Exception("Błąd serwera: ${response.statusCode}");
       }
     } catch (e) {
-      print("Log błędu: $e");
       rethrow;
     }
   }
@@ -114,7 +131,6 @@ class WeatherRepository {
     try {
       await _box.delete(cityId);
     } catch (e) {
-      print("Log błędu: $e");
       throw Exception("Nie udało się usunąć miasta!");
     }
   }

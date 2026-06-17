@@ -6,6 +6,8 @@ class Weather {
   double? temp;
   double? windSpeed;
   int? humidity;
+  double? pressure;
+  int? windDirection;
 
   Weather({
     required this.id,
@@ -15,6 +17,8 @@ class Weather {
     this.temp,
     this.windSpeed,
     this.humidity,
+    this.pressure,
+    this.windDirection,
   });
 
   Map<String, dynamic> toMap() {
@@ -26,6 +30,8 @@ class Weather {
       'temp': temp,
       'windSpeed': windSpeed,
       'humidity': humidity,
+      'pressure': pressure,
+      'windDirection': windDirection,
     };
   }
 
@@ -38,6 +44,8 @@ class Weather {
       temp: map['temp'],
       windSpeed: map['windSpeed'],
       humidity: map['humidity'],
+      pressure: map['pressure'],
+      windDirection: map['windDirection'],
     );
   }
 }
