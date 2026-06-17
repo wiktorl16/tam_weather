@@ -75,4 +75,47 @@ class WeatherRepository {
       throw Exception("Brak połączenia z siecią - wyświetlane są archiwalne dane!");
     }
   }
+
+  Future<void> addCity(String cityName) async {
+    final url = 'https://geocoding-api.open-meteo.com/v1/search?name=${Uri.encodeComponent(cityName)}&count=1&language=pl';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data['results'] != null && (data['results'] as List).isNotEmpty) {
+          final cityData = data['results'][0];
+
+          final String id = '${cityName.toLowerCase().replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}';
+
+          final newCity = Weather(
+            id: id,
+            name: cityData['name'],
+            lat: (cityData['latitude'] as num).toDouble(),
+            lon: (cityData['longitude'] as num).toDouble(),
+          );
+
+          await _box.put(newCity.id, newCity.toMap());
+        } else {
+          throw Exception("Nie znaleziono miasta o podanej nazwie!");
+        }
+      } else {
+        throw Exception("Błąd serwera: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Log błędu: $e");
+      rethrow;
+    }
+  }
+
+  Future<void> deleteCity(String cityId) async {
+    try {
+      await _box.delete(cityId);
+    } catch (e) {
+      print("Log błędu: $e");
+      throw Exception("Nie udało się usunąć miasta!");
+    }
+  }
 }

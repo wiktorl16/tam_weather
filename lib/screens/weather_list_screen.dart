@@ -38,6 +38,52 @@ class _WeatherListScreenState extends State<WeatherListScreen> {
     }
   }
 
+  void _showAddCityDialog() {
+    final TextEditingController controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Dodaj nowe miasto'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: 'Wpisz nazwę miasta',
+            ),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Anuluj'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final String text = controller.text.trim();
+                if (text.isNotEmpty) {
+                  Navigator.pop(context);
+                  setState(() => _isLoading = true);
+                  try {
+                    await _repository.addCity(text);
+                    await _repository.fetchCurrentWeatherForList();
+                  } catch (e) {
+                    setState(() {
+                      _errorMessage = e.toString().replaceAll("Exception: ", "");
+                    });
+                  } finally {
+                    setState(() => _isLoading = false);
+                  }
+                }
+              },
+              child: const Text('Dodaj'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,15 +115,37 @@ class _WeatherListScreenState extends State<WeatherListScreen> {
                   itemCount: cities.length,
                   itemBuilder: (context, index) {
                     final city = cities[index];
-                    return ListTile(
-                      title: Text(city.name),
-                      trailing: Text(city.temp != null ? '${city.temp}°C' : '--°C', style: const TextStyle(fontSize: 18)),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => WeatherDetailScreen(cityId: city.id)),
+
+                    return Dismissible(
+                      key: Key(city.id),
+
+                      direction: DismissDirection.endToStart,
+
+                      background: Container(
+                        color: Colors.red,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20.0),
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+
+                      onDismissed: (direction) async {
+                        await _repository.deleteCity(city.id);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Usunięto miasto: ${city.name}')),
                         );
                       },
+
+                      child: ListTile(
+                        title: Text(city.name),
+                        trailing: Text(city.temp != null ? '${city.temp}°C' : '--°C', style: const TextStyle(fontSize: 18)),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => WeatherDetailScreen(cityId: city.id)),
+                          );
+                        },
+                      ),
                     );
                   },
                 );
@@ -85,6 +153,10 @@ class _WeatherListScreenState extends State<WeatherListScreen> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddCityDialog,
+        child: const Icon(Icons.add),
       ),
     );
   }
