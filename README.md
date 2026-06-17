@@ -1,6 +1,6 @@
 # TAM Weather
 
-Aplikacja mobilna do monitorowania pogody w różnych miastach.
+Aplikacja mobilna do monitorowania pogody w różnych miastach. Wykorzystuje API Open-Meteo: https://open-meteo.com/
 
 ## Główne funkcje
 
