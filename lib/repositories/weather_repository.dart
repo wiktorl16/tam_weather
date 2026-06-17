@@ -32,8 +32,20 @@ class WeatherRepository {
 
       // Sprawdzamy, czy serwer odpowiedział poprawnie (kod 200 oznacza sukces).
       if (response.statusCode == 200) {
-        // API Open-Meteo zwraca nam Listę (Array).
-        final List<dynamic> results = jsonDecode(response.body);
+        final dynamic decodedData = jsonDecode(response.body);
+        List<dynamic> results = [];
+
+        // Sprawdzamy typ struktury, która przyszła z API
+        if (decodedData is List) {
+          // Jeśli to lista (wiele miast), przypisujemy ją bezpośrednio.
+          results = decodedData;
+        } else if (decodedData is Map) {
+          // Jeśli to pojedynczy obiekt (jedno miasto), pakujemy go w jednoelementową listę.
+          results = [decodedData];
+        } else {
+          // Na wypadek, gdyby API zwróciło coś zupełnie nieoczekiwanego
+          throw Exception("Nieoczekiwany format danych z serwera!");
+        }
 
         for (int i = 0; i < cities.length; i++) {
           final city = cities[i];
@@ -146,9 +158,16 @@ class WeatherRepository {
         throw Exception("Błąd serwera: ${response.statusCode}");
       }
     } catch (e) {
-      // 'rethrow' przekazuje złapany błąd do interfejsu użytkownika (UI),
-      // aby okno dialogowe w widoku mogło go przechwycić i wyświetlić komunikat na ekranie.
-      rethrow;
+      // Sprawdzamy, czy przechwycony błąd to błąd rzucony przez nas celowo w sekcji 'try'
+      if (e.toString().contains("Nie znaleziono miasta") ||
+          e.toString().contains("Błąd serwera")) {
+        // Jeśli tak, 'rethrow' przekazuje złapany błąd do interfejsu użytkownika (UI),
+        // aby okno dialogowe w widoku mogło go przechwycić i wyświetlić komunikat na ekranie.
+        rethrow;
+      }
+
+      // Obsługa każdego innego błędu.
+      throw Exception("Błąd: Nie można dodać miasta!");
     }
   }
 

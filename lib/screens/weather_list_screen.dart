@@ -43,6 +43,16 @@ class _WeatherListScreenState extends State<WeatherListScreen> {
       setState(() {
         _errorMessage = e.toString().replaceAll("Exception: ", "");
       });
+
+      // Odliczamy 4 sekundy i czyścimy błąd.
+      Future.delayed(const Duration(seconds: 4), () {
+        // Sprawdzamy 'mounted', na wypadek gdyby użytkownik zamknął ekran w trakcie odliczania
+        if (mounted) {
+          setState(() {
+            _errorMessage = null;
+          });
+        }
+      });
     } finally {
       // Niezależnie od tego czy pobieranie się udało, czy wystąpił błąd – wyłączamy pasek ładowania.
       setState(() => _isLoading = false);
@@ -90,6 +100,16 @@ class _WeatherListScreenState extends State<WeatherListScreen> {
                         "Exception: ",
                         "",
                       );
+                    });
+
+                    // Odliczamy 4 sekundy i czyścimy błąd.
+                    Future.delayed(const Duration(seconds: 4), () {
+                      // Sprawdzamy 'mounted', na wypadek gdyby użytkownik zamknął ekran w trakcie odliczania
+                      if (mounted) {
+                        setState(() {
+                          _errorMessage = null;
+                        });
+                      }
                     });
                   } finally {
                     setState(() => _isLoading = false);
